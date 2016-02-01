@@ -13,7 +13,7 @@ public class WebStats {
 
     if (url != null) {
       HttpClient client = new HttpClient();
-      String response = client.getHTML(url);
+      String response = client.getHtml(url);
       System.out.println(response);
     }
   }

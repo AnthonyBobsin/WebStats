@@ -8,7 +8,7 @@ import java.io.BufferedReader;
 import java.lang.StringBuilder;
 
 public class HttpClient {
-  public String getHTML(URL url) {
+  public String getHtml(URL url) {
     HttpURLConnection connection = null;
     try {
       connection = (HttpURLConnection)url.openConnection();
