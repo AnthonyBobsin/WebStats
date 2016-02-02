@@ -14,6 +14,7 @@ public class WebStats {
     if (url != null) {
       HttpClient client = new HttpClient();
       String response = client.getHtml(url);
+      // TODO: Collect all href urls from the response, and crawl them concurrently
       System.out.println(response);
     }
   }
