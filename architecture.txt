@@ -1,0 +1,41 @@
+
+WebStats (main)
+  initializes WebCrawler with initial url. waits for finishedCrawled == true
+
+  WebCrawler
+    HashMap<URL, HashMap<String, int>> urlsWithStats. synchronized
+    Boolean finishedCrawling. synchronized
+
+    WebCrawler(URL url) {
+      queueWebCrawlTask(URL url)
+    }
+
+    pushToUrlStats() call inside WebCrawlJob
+
+    queueWebCrawlJob(URL url) {
+      exec.execute(new WebCrawlJob(url))
+    }
+
+
+    HtmlParser
+      URL url
+      HashMap<String, int> htmlStats
+      Array<URL> links
+      static HttpClient
+
+      public HashMap<String, int> retrieveAndParseHtml() {
+        ... html jazz
+
+        pushToUrlStats()
+      }
+
+    WebCrawlJob extends HtmlParser implements Runnable
+      run() {
+        retrieveAndParseHtml
+        links.each:
+          if (pagesToCrawl < crawledCount && pathsToCrawl < crawledCount)
+            queueWebCrawlJob(url)
+          else
+            finishedCrawling()
+            return
+      }
