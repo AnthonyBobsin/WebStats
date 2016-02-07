@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 public class WebCrawler {
-  // private HashMap<URL, HashMap<String, int>> urlsWithStats = new HashMap<URL, HashMap<String, int>>();
+  private HashMap<URL, HashMap> urlsWithStats = new HashMap<URL, HashMap>();
   private int pagesCrawled = 0;
   private int pathsReached = 0;
   private int pagesToCrawl = 0;
@@ -26,7 +26,9 @@ public class WebCrawler {
     queueWebCrawlTask(url);
   }
 
-  public void pushToUrlStats(HashMap stats, URL url) {}
+  public void pushToUrlsStats(HashMap stats, URL url) {
+    urlsWithStats.put(url, stats);
+  }
 
   public void queueWebCrawlTask(URL url) {
     (new Thread(new WebCrawlJob(url))).start();
@@ -57,12 +59,51 @@ public class WebCrawler {
   }
 
   public class HtmlParser {
-    private Map<String, Integer> urlStats = new HashMap<String, Integer>();
+    private HashMap<String, Integer> urlStats = new HashMap<String, Integer>();
     private URL[] links = new URL[10];
     public HttpClient http = new HttpClient();
 
-    public void retrieveAndParseHtml(URL url) {
+    /**
+     * If tag found in urlStats, increment tag
+     * @param keyword the keyword to increment
+     */
+    public void incrementUrlStats(String keyword) {
+      urlStats.put(keyword, urlStats.get(keyword) + 1);
+    }
 
+    /**
+     * If tag not found in urlStats, create tag
+     * @param keyword the keyword to create
+     */
+    public void addUrlStats(String keyword) {
+      urlStats.put(keyword, 1);
+    }
+
+    /**
+     * Checks if URL is valid. If it is, Queue URL
+     * @param url the url to check if it is valid
+     */
+    public void isURL(String url) {
+      Boolean isValidURL = false;
+      URL urlChecker = null;
+
+      try{
+        urlChecker = new URL(url);
+      } catch (MalformedURLException e) {
+        isValidURL = false;
+      } finally {
+        if (!isValidURL) {
+          //System.out.println(url);
+          //queueWebCrawlTask(checkUrl);
+        }
+      }
+    }
+
+    /**
+     * Parse HTML content
+     * @param url an absolute URL to parse
+     */
+    public void retrieveAndParseHtml(URL url) {
       HttpURLConnection connection = null;
       try {
         connection = (HttpURLConnection)url.openConnection();
@@ -71,23 +112,29 @@ public class WebCrawler {
 
         BufferedReader bReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
         String inputLine;
-        while((inputLine = bReader.readLine()) != null) {
-          Pattern regexPattern = Pattern.compile("< ?([A-Za-z]+)");
-          Matcher regexMatcher = regexPattern.matcher(inputLine);
 
+        Pattern regexTagPattern = Pattern.compile("< ?([A-Za-z]+)");
+        Pattern regexHerfPattern = Pattern.compile("href=\"(.*?)\""); //Regex Needs to be better implemented;  Another Regex: "<a\\s+href\\s*=\\s*(\"[^\"]*\"|[^\\s>]*)\\s*>"
+        Matcher regexMatcher;
+        Matcher regexTagMatcher;
+
+        while((inputLine = bReader.readLine()) != null) {
+          regexMatcher = regexTagPattern.matcher(inputLine);
           if (regexMatcher.find()) {
             if (urlStats.containsKey(regexMatcher.group(1))) {
-              urlStats.put(regexMatcher.group(1), urlStats.get(regexMatcher.group(1)) + 1);
+              incrementUrlStats(regexMatcher.group(1));
             } else {
-              urlStats.put(regexMatcher.group(1), 1);
+              addUrlStats(regexMatcher.group(1));
             }
             if (regexMatcher.group(1).equals("a")) {
-              //Put href tag in queue
+              regexTagMatcher = regexHerfPattern.matcher(inputLine);
+              if(regexTagMatcher.find()) {    //If link found
+                isURL(regexTagMatcher.group(1));
+              }
             }
           }
         }
         bReader.close();
-
       } catch (Exception e) {
         e.printStackTrace();
       } finally {
@@ -98,10 +145,10 @@ public class WebCrawler {
     }
 
     public void printUrlStats() {
-  		for (String key : urlStats.keySet()) {
-  			System.out.println(key + " - " + urlStats.get(key));
-  		}
-  	}
+      for (String key : urlStats.keySet()) {
+        System.out.println(key + " - " + urlStats.get(key));
+      }
+    }
   }
 
   public class WebCrawlJob extends HtmlParser implements Runnable {
