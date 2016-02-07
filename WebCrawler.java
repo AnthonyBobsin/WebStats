@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 
 import java.util.concurrent.*;
 import java.util.HashMap;
+import java.util.Map;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -56,58 +57,52 @@ public class WebCrawler {
   }
 
   public class HtmlParser {
-    private HashMap urlStats = new HashMap<String, Integer>();
+    private Map<String, Integer> urlStats = new HashMap<String, Integer>();
     private URL[] links = new URL[10];
     public HttpClient http = new HttpClient();
 
     public void retrieveAndParseHtml(URL url) {
 
-			HttpURLConnection connection = null;
-			try {
-				connection = (HttpURLConnection)url.openConnection();
-				connection.setRequestMethod("GET");
-				connection.setRequestProperty("Accept","*/*");
+      HttpURLConnection connection = null;
+      try {
+        connection = (HttpURLConnection)url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Accept","*/*");
 
-				BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-				String inputLine;
-				while((inputLine = br.readLine()) != null) {
-					// System.out.println(inputLine);
-					String pattern = "< ?([A-Za-z]+)";
-					Pattern r = Pattern.compile(pattern);
-					Matcher m = r.matcher(inputLine);
+        BufferedReader bReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        String inputLine;
+        while((inputLine = bReader.readLine()) != null) {
+          Pattern regexPattern = Pattern.compile("< ?([A-Za-z]+)");
+          Matcher regexMatcher = regexPattern.matcher(inputLine);
 
-					if (m.find()) {
-						//System.out.println("Found value: " + m.group(1));
-						//System.out.println("Found value: " + m.group(0));
+          if (regexMatcher.find()) {
+            if (urlStats.containsKey(regexMatcher.group(1))) {
+              urlStats.put(regexMatcher.group(1), urlStats.get(regexMatcher.group(1)) + 1);
+            } else {
+              urlStats.put(regexMatcher.group(1), 1);
+            }
+            if (regexMatcher.group(1).equals("a")) {
+              //Put href tag in queue
+            }
+          }
+        }
+        bReader.close();
 
-						if (urlStats.containsKey(m.group(1))) {
-							urlStats.put(m.group(1), (Integer)urlStats.get(m.group(1)) + 1);
-						} else {
-							urlStats.put(m.group(1), 1);
-						}
-						if (m.group(1).equals("a")) {
-							System.out.println("Hello World");
-						}
-					}
-				}
-				br.close();
-
-			} catch (Exception e) {
-				e.printStackTrace();
-			} finally {
-				if (connection != null) {
-					connection.disconnect();
-				}
-			}
+      } catch (Exception e) {
+        e.printStackTrace();
+      } finally {
+        if (connection != null) {
+          connection.disconnect();
+        }
+      }
     }
 
-		public void printUrlStats() {
-			for (String key : urlStats.keySet()) {
-				//System.out.println(key + " - " + urlStats.get(key));
-			}
-		}
-
-	}
+    public void printUrlStats() {
+  		for (String key : urlStats.keySet()) {
+  			System.out.println(key + " - " + urlStats.get(key));
+  		}
+  	}
+  }
 
   public class WebCrawlJob extends HtmlParser implements Runnable {
     private final URL url;
@@ -118,7 +113,7 @@ public class WebCrawler {
 
     public void run() {
       retrieveAndParseHtml(url);
-			printUrlStats();
+      printUrlStats();
     }
 
     public Boolean shouldKeepCrawling() {
