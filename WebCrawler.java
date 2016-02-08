@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 public class WebCrawler {
-  private HashMap<URL, HashMap> urlsWithStats = new HashMap<URL, HashMap>();
+  private ConcurrentHashMap<URL, HashMap> urlsWithStats = new ConcurrentHashMap<URL, HashMap>();
   private int pagesCrawled = 0;
   private int pathsReached = 0;
   private int pagesToCrawl = 0;
@@ -26,8 +26,17 @@ public class WebCrawler {
     queueWebCrawlTask(url);
   }
 
-  public void pushToUrlsStats(HashMap stats, URL url) {
+  public void pushToUrlsStats(URL url, HashMap stats) {
     urlsWithStats.put(url, stats);
+  }
+
+  public void printUrlsStats() {
+    for (URL key : urlsWithStats.keySet()) {
+      System.out.println("URL: " + key.toString());
+      for (Object htmlTag : urlsWithStats.get(key).keySet()) {
+        System.out.println(htmlTag.toString() + " - " + urlsWithStats.get(key).get(htmlTag).toString());
+      }
+    }
   }
 
   public void queueWebCrawlTask(URL url) {
@@ -94,7 +103,9 @@ public class WebCrawler {
           }
         }
         reader.close();
+        pushToUrlsStats(url, urlStats);
       } catch (Exception e) {
+        System.out.print("Error Accessing Link: ");
         e.printStackTrace();
       } finally {
         if (connection != null) {
