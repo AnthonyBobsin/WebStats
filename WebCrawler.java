@@ -58,10 +58,9 @@ public class WebCrawler {
     return pathsToReach;
   }
 
-  public class HtmlParser {
+  public abstract class HtmlParser {
     private HashMap<String, Integer> urlStats = new HashMap<String, Integer>();
     private URL[] links = new URL[10];
-    public HttpClient http = new HttpClient();
 
     /**
      * If tag found in urlStats, increment tag
@@ -80,26 +79,6 @@ public class WebCrawler {
     }
 
     /**
-     * Checks if URL is valid. If it is, Queue URL
-     * @param url the url to check if it is valid
-     */
-    public void isURL(String url) {
-      Boolean isValidURL = false;
-      URL urlChecker = null;
-
-      try{
-        urlChecker = new URL(url);
-      } catch (MalformedURLException e) {
-        isValidURL = false;
-      } finally {
-        if (!isValidURL) {
-          //System.out.println(url);
-          //queueWebCrawlTask(checkUrl);
-        }
-      }
-    }
-
-    /**
      * Parse HTML content
      * @param url an absolute URL to parse
      */
@@ -109,32 +88,30 @@ public class WebCrawler {
         connection = (HttpURLConnection)url.openConnection();
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Accept","*/*");
-
-        BufferedReader bReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
         String inputLine;
 
         Pattern regexTagPattern = Pattern.compile("< ?([A-Za-z]+)");
-        Pattern regexHerfPattern = Pattern.compile("href=\"(.*?)\""); //Regex Needs to be better implemented;  Another Regex: "<a\\s+href\\s*=\\s*(\"[^\"]*\"|[^\\s>]*)\\s*>"
+        Pattern regexHrefPattern = Pattern.compile("href=\"((http|https):.+)\"");
         Matcher regexMatcher;
-        Matcher regexTagMatcher;
+        Matcher htmlTagMatcher;
+        String htmlTag;
 
-        while((inputLine = bReader.readLine()) != null) {
-          regexMatcher = regexTagPattern.matcher(inputLine);
-          if (regexMatcher.find()) {
-            if (urlStats.containsKey(regexMatcher.group(1))) {
-              incrementUrlStats(regexMatcher.group(1));
-            } else {
-              addUrlStats(regexMatcher.group(1));
-            }
-            if (regexMatcher.group(1).equals("a")) {
-              regexTagMatcher = regexHerfPattern.matcher(inputLine);
-              if(regexTagMatcher.find()) {    //If link found
-                isURL(regexTagMatcher.group(1));
+        while((inputLine = reader.readLine()) != null) {
+          htmlTagMatcher = regexTagPattern.matcher(inputLine);
+
+          if (htmlTagMatcher.find()) {
+            htmlTag = htmlTagMatcher.group(1);
+            incrementCountForHtmlTag(htmlTag);
+            if (htmlTag.equals("a")) {
+              htmlTagMatcher = regexHrefPattern.matcher(inputLine);
+              if (htmlTagMatcher.find()) {
+                handleFoundLink(htmlTagMatcher.group(1));
               }
             }
           }
         }
-        bReader.close();
+        reader.close();
       } catch (Exception e) {
         e.printStackTrace();
       } finally {
@@ -144,11 +121,38 @@ public class WebCrawler {
       }
     }
 
+    public void incrementCountForHtmlTag(String htmlTag) {
+      if (urlStats.containsKey(htmlTag)) {
+        urlStats.put(htmlTag, urlStats.get(htmlTag) + 1);
+      } else {
+        urlStats.put(htmlTag, 1);
+      }
+    }
+
     public void printUrlStats() {
       for (String key : urlStats.keySet()) {
         System.out.println(key + " - " + urlStats.get(key));
       }
     }
+
+    /**
+     * Checks if URL is valid.
+     * @param url the url to check if it is valid
+     */
+    public Boolean isValidUrl(String url) {
+      Boolean isValidUrl = true;
+      URL urlChecker = null;
+
+      try{
+        urlChecker = new URL(url);
+      } catch (MalformedURLException e) {
+        isValidUrl = false;
+      }
+
+      return isValidUrl;
+    }
+
+    public abstract void handleFoundLink(String url);
   }
 
   public class WebCrawlJob extends HtmlParser implements Runnable {
@@ -161,6 +165,21 @@ public class WebCrawler {
     public void run() {
       retrieveAndParseHtml(url);
       printUrlStats();
+    }
+
+    /**
+     * Checks if URL is valid. If it is, Queue URL
+     * @param url the url to check if it is valid
+     */
+    public void handleFoundLink(String url) {
+      if (isValidUrl(url)) {
+        try{
+          queueWebCrawlTask(new URL(url));
+        } catch (MalformedURLException e) {
+          System.out.println("ERROR: bad url" + url);
+          e.printStackTrace();
+        }
+      }
     }
 
     public Boolean shouldKeepCrawling() {
