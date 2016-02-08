@@ -60,7 +60,6 @@ public class WebCrawler {
 
   public abstract class HtmlParser {
     private HashMap<String, Integer> urlStats = new HashMap<String, Integer>();
-    private URL[] links = new URL[10];
 
     /**
      * If tag found in urlStats, increment tag
@@ -89,13 +88,11 @@ public class WebCrawler {
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Accept","*/*");
         BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-        String inputLine;
+        String inputLine, htmlTag;
 
         Pattern regexTagPattern = Pattern.compile("< ?([A-Za-z]+)");
-        Pattern regexHrefPattern = Pattern.compile("href=\"((http|https):.+)\"");
-        Matcher regexMatcher;
+        Pattern regexHrefPattern = Pattern.compile("href=\"((http|https):[^ ]+)\"");
         Matcher htmlTagMatcher;
-        String htmlTag;
 
         while((inputLine = reader.readLine()) != null) {
           htmlTagMatcher = regexTagPattern.matcher(inputLine);
@@ -106,6 +103,7 @@ public class WebCrawler {
             if (htmlTag.equals("a")) {
               htmlTagMatcher = regexHrefPattern.matcher(inputLine);
               if (htmlTagMatcher.find()) {
+                System.out.println("Found link: " + htmlTagMatcher.group(1));
                 handleFoundLink(htmlTagMatcher.group(1));
               }
             }
@@ -174,6 +172,7 @@ public class WebCrawler {
     public void handleFoundLink(String url) {
       if (isValidUrl(url)) {
         try{
+          System.out.println("Queuing url: " + url);
           queueWebCrawlTask(new URL(url));
         } catch (MalformedURLException e) {
           System.out.println("ERROR: bad url" + url);
