@@ -62,22 +62,6 @@ public class WebCrawler {
     private HashMap<String, Integer> urlStats = new HashMap<String, Integer>();
 
     /**
-     * If tag found in urlStats, increment tag
-     * @param keyword the keyword to increment
-     */
-    public void incrementUrlStats(String keyword) {
-      urlStats.put(keyword, urlStats.get(keyword) + 1);
-    }
-
-    /**
-     * If tag not found in urlStats, create tag
-     * @param keyword the keyword to create
-     */
-    public void addUrlStats(String keyword) {
-      urlStats.put(keyword, 1);
-    }
-
-    /**
      * Parse HTML content
      * @param url an absolute URL to parse
      */
