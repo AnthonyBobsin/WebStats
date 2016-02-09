@@ -15,15 +15,15 @@ import java.util.regex.Matcher;
 
 public class WebCrawler {
   private ConcurrentHashMap<URL, HashMap> urlsWithStats = new ConcurrentHashMap<URL, HashMap>();
-  private int pagesCrawled = 0;
-  private int pathsReached = 0;
-  private int pagesToCrawl = 0;
-  private int pathsToReach = 0;
+  private static int pagesCrawled = 0;
+  // private static int pathsReached = 0;
+  private static int pagesToCrawl = 0;
+  private static int pathsToReach = 0;
 
   public WebCrawler(URL url, int pagesToCrawl, int pathsToReach) {
     this.pagesToCrawl = pagesToCrawl;
     this.pathsToReach = pathsToReach;
-    queueWebCrawlTask(url);
+    queueWebCrawlTask(url, 1);
   }
 
   public void pushToUrlsStats(URL url, HashMap stats) {
@@ -39,31 +39,40 @@ public class WebCrawler {
     }
   }
 
-  public void queueWebCrawlTask(URL url) {
-    (new Thread(new WebCrawlJob(url))).start();
+  /**
+   * Queue a new web crawl task
+   * @param url, the url to crawl
+   * @param path, the path number deep this url is
+   */
+  public void queueWebCrawlTask(URL url, int path) {
+    (new Thread(new WebCrawlJob(url, path))).start();
   }
 
-  public synchronized int pagesCrawled() {
+  /**
+   * Retrieve the number of pages crawled
+   */
+  public static synchronized int pagesCrawled() {
     return pagesCrawled;
   }
 
-  public synchronized void incrementPagesCrawled() {
+  /**
+   * Increment the number of pages crawled
+   */
+  public static synchronized void incrementPagesCrawled() {
     pagesCrawled++;
   }
 
-  public synchronized int pathsReached() {
-    return pathsReached;
-  }
-
-  public synchronized void incrementPathsReached() {
-    pathsReached++;
-  }
-
-  public synchronized int pagesToCrawl() {
+  /**
+   * Retrieve the number of pages to crawler
+   */
+  public static synchronized int pagesToCrawl() {
     return pagesToCrawl;
   }
 
-  public synchronized int pathsToReach() {
+  /**
+   * Retrieve the number of paths to reach
+   */
+  public static synchronized int pathsToReach() {
     return pathsToReach;
   }
 
@@ -105,7 +114,6 @@ public class WebCrawler {
         reader.close();
         pushToUrlsStats(url, urlStats);
       } catch (Exception e) {
-        System.out.print("Error Accessing Link: ");
         e.printStackTrace();
       } finally {
         if (connection != null) {
@@ -150,13 +158,16 @@ public class WebCrawler {
 
   public class WebCrawlJob extends HtmlParser implements Runnable {
     private final URL url;
+    private final int pathNumber;
 
-    public WebCrawlJob(URL url) {
+    public WebCrawlJob(URL url, int pathNumber) {
       this.url = url;
+      this.pathNumber = pathNumber;
     }
 
     public void run() {
       retrieveAndParseHtml(url);
+      incrementPagesCrawled();
       printUrlStats();
     }
 
@@ -165,10 +176,10 @@ public class WebCrawler {
      * @param url the url to check if it is valid
      */
     public void handleFoundLink(String url) {
-      if (isValidUrl(url)) {
+      if (isValidUrl(url) && shouldKeepCrawling()) {
         try{
           System.out.println("Queuing url: " + url);
-          queueWebCrawlTask(new URL(url));
+          queueWebCrawlTask(new URL(url), pathNumber + 1);
         } catch (MalformedURLException e) {
           System.out.println("ERROR: bad url" + url);
           e.printStackTrace();
@@ -176,8 +187,11 @@ public class WebCrawler {
       }
     }
 
+    /**
+     * Tests to see if we should keep crawling
+     */
     public Boolean shouldKeepCrawling() {
-      return (pagesCrawled() < pagesToCrawl()) && (pathsReached() < pathsToReach());
+      return (pagesCrawled() < pagesToCrawl()) && (pathNumber < pathsToReach());
     }
   }
 }
