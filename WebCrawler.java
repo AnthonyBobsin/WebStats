@@ -63,6 +63,13 @@ public class WebCrawler {
   }
 
   /**
+   * Decrement the number of pages crawled
+   */
+  public static synchronized void decrementPagesCrawled() {
+    pagesCrawled--;
+  }
+
+  /**
    * Retrieve the number of pages to crawler
    */
   public static synchronized int pagesToCrawl() {
@@ -105,7 +112,6 @@ public class WebCrawler {
             if (htmlTag.equals("a")) {
               htmlTagMatcher = regexHrefPattern.matcher(inputLine);
               if (htmlTagMatcher.find()) {
-                System.out.println("Found link: " + htmlTagMatcher.group(1));
                 handleFoundLink(htmlTagMatcher.group(1));
               }
             }
@@ -114,7 +120,9 @@ public class WebCrawler {
         reader.close();
         pushToUrlsStats(url, urlStats);
       } catch (Exception e) {
-        e.printStackTrace();
+        System.out.println("ERROR Bad URL: " + url.toString());
+        decrementPagesCrawled();
+        decrementPagesCrawled();
       } finally {
         if (connection != null) {
           connection.disconnect();
@@ -168,7 +176,7 @@ public class WebCrawler {
     public void run() {
       retrieveAndParseHtml(url);
       incrementPagesCrawled();
-      printUrlStats();
+      //printUrlStats();
     }
 
     /**
@@ -181,8 +189,7 @@ public class WebCrawler {
           System.out.println("Queuing url: " + url);
           queueWebCrawlTask(new URL(url), pathNumber + 1);
         } catch (MalformedURLException e) {
-          System.out.println("ERROR: bad url" + url);
-          e.printStackTrace();
+          System.out.println("ERROR Bad URL: " + url);
         }
       }
     }
