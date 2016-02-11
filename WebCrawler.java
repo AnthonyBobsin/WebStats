@@ -9,14 +9,16 @@ import java.io.BufferedReader;
 import java.util.concurrent.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 public class WebCrawler {
   private ConcurrentHashMap<URL, HashMap> urlsWithStats = new ConcurrentHashMap<URL, HashMap>();
+  private ConcurrentHashMap<String, Integer> globalUrlsWithStats = new ConcurrentHashMap<String, Integer>();
   private static int pagesCrawled = 0;
-  // private static int pathsReached = 0;
   private static int pagesToCrawl = 0;
   private static int pathsToReach = 0;
 
@@ -35,9 +37,29 @@ public class WebCrawler {
       System.out.println("URL: " + key.toString());
       for (Object htmlTag : urlsWithStats.get(key).keySet()) {
         System.out.println(htmlTag.toString() + " - " + urlsWithStats.get(key).get(htmlTag).toString());
+        incrementtotalGlobalUrlsWithStats(htmlTag.toString(), (Integer)(urlsWithStats.get(key).get(htmlTag)));
       }
     }
   }
+
+  public void incrementtotalGlobalUrlsWithStats(String htmlTag, int count) {
+    if (globalUrlsWithStats.containsKey(htmlTag)) {
+      globalUrlsWithStats.put(htmlTag, globalUrlsWithStats.get(htmlTag) + count);
+    } else {
+      globalUrlsWithStats.put(htmlTag, count);
+    }
+  }
+
+
+  public void printGlobalUrlsWithStats() {
+    SortedSet<String> sortGlobalUrlsWithStats = new TreeSet<String>(globalUrlsWithStats.keySet());
+    System.out.println("######### GLOBAL STATS #########");
+    for (String key : sortGlobalUrlsWithStats) {
+      int value = globalUrlsWithStats.get(key);
+      System.out.println(key + " - " + value);
+    }
+  }
+
 
   /**
    * Queue a new web crawl task
@@ -122,7 +144,6 @@ public class WebCrawler {
       } catch (Exception e) {
         System.out.println("ERROR Bad URL: " + url.toString());
         decrementPagesCrawled();
-        decrementPagesCrawled();
       } finally {
         if (connection != null) {
           connection.disconnect();
@@ -176,7 +197,6 @@ public class WebCrawler {
     public void run() {
       retrieveAndParseHtml(url);
       incrementPagesCrawled();
-      //printUrlStats();
     }
 
     /**
