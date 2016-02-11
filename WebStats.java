@@ -5,6 +5,11 @@ import java.util.Stack;
 import java.util.concurrent.*;
 
 public class WebStats {
+
+  /**
+   * Main Parser Class
+   * @param args, Arguments supplied by the users
+   */
   public static void main(String[] args) {
     URL url = null;
     try {
@@ -18,4 +23,5 @@ public class WebStats {
       WebCrawler crawler = new WebCrawler(url, Integer.parseInt(args[3]), Integer.parseInt(args[1]));
     }
   }
+
 }
