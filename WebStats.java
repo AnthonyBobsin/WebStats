@@ -11,16 +11,31 @@ public class WebStats {
    * @param args, Arguments supplied by the users
    */
   public static void main(String[] args) {
+    if (args.length == 1) {
+      runWebCrawler(args[0], 10, 3);
+    } else {
+      runWebCrawler(args[4],Integer.parseInt(args[3]), Integer.parseInt(args[1]));
+    }
+  }
+
+  /**
+   * Run Web Crawler with specific arguments or default arguments
+   * @param urlArgument, The url the parse
+   * @param pagesArgument, The amount of pages to parse
+   * @param pathArgument, The path depth
+   */
+  public static void runWebCrawler(String urlArgument, int pagesArgument, int pathArgument) {
     URL url = null;
+
     try {
-      url = new URL(args[4]);
+      url = new URL(urlArgument);
     } catch (MalformedURLException e) {
       System.out.println("ERROR: Bad URL provided");
       e.printStackTrace();
     }
 
     if (url != null) {
-      WebCrawler crawler = new WebCrawler(url, Integer.parseInt(args[3]), Integer.parseInt(args[1]));
+      WebCrawler crawler = new WebCrawler(url, pagesArgument, pathArgument);
     }
   }
 
