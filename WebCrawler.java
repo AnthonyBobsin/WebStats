@@ -16,22 +16,41 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 public class WebCrawler {
+  // Links Url to HashMaps containing html tag and value
   private ConcurrentHashMap<URL, HashMap> urlsWithStats = new ConcurrentHashMap<URL, HashMap>();
+  // Counts all htmltags
   private ConcurrentHashMap<String, Integer> globalUrlsWithStats = new ConcurrentHashMap<String, Integer>();
+  //Amount of pages crawled
   private static int pagesCrawled = 0;
+  //Amount of pages to crawl
   private static int pagesToCrawl = 0;
+  //Amount of paths to reach
   private static int pathsToReach = 0;
 
+  /**
+   * WebCrawler Constructor
+   * @param url, The url the queue
+   * @param pagesToCrawl,  Amount of pages the crawler should crawl
+   * @param pathstoReach, The depth of the crawl
+   */
   public WebCrawler(URL url, int pagesToCrawl, int pathsToReach) {
     this.pagesToCrawl = pagesToCrawl;
     this.pathsToReach = pathsToReach;
     queueWebCrawlTask(url, 1);
   }
 
+  /**
+   * Push URL with Hashpmap to link them to URls
+   * @param url, Url to push
+   * @param stats, Hashmap to push
+   */
   public void pushToUrlsStats(URL url, HashMap stats) {
     urlsWithStats.put(url, stats);
   }
 
+  /**
+   * Print all the Urls with the tags
+   */
   public void printUrlsStats() {
     for (URL key : urlsWithStats.keySet()) {
       System.out.println("URL: " + key.toString());
@@ -42,6 +61,11 @@ public class WebCrawler {
     }
   }
 
+  /**
+   * Increment globalUrlsWithStats if tag found
+   * @param htmlTag, htmlTag to increment
+   * @param count, Number of times to increment the htmlTag
+   */
   public void incrementtotalGlobalUrlsWithStats(String htmlTag, int count) {
     if (globalUrlsWithStats.containsKey(htmlTag)) {
       globalUrlsWithStats.put(htmlTag, globalUrlsWithStats.get(htmlTag) + count);
@@ -50,7 +74,9 @@ public class WebCrawler {
     }
   }
 
-
+  /**
+   * Organize and order htmlTags
+   */
   public void printGlobalUrlsWithStats() {
     SortedSet<String> sortGlobalUrlsWithStats = new TreeSet<String>(globalUrlsWithStats.keySet());
     System.out.println("######### GLOBAL STATS #########");
@@ -59,7 +85,6 @@ public class WebCrawler {
       System.out.println(key + " - " + value);
     }
   }
-
 
   /**
    * Queue a new web crawl task
@@ -106,11 +131,12 @@ public class WebCrawler {
   }
 
   public abstract class HtmlParser {
+    //Html tag count tracker
     private HashMap<String, Integer> urlStats = new HashMap<String, Integer>();
 
     /**
      * Parse HTML content
-     * @param url an absolute URL to parse
+     * @param url, an absolute URL to parse
      */
     public void retrieveAndParseHtml(URL url) {
       HttpURLConnection connection = null;
@@ -150,7 +176,10 @@ public class WebCrawler {
         }
       }
     }
-
+    /**
+     * Increment urlStats if tag found; if not, add tag to urlStats
+     * @param htmlTag, Html tag that needs to be added or incremented
+     */
     public void incrementCountForHtmlTag(String htmlTag) {
       if (urlStats.containsKey(htmlTag)) {
         urlStats.put(htmlTag, urlStats.get(htmlTag) + 1);
@@ -159,15 +188,9 @@ public class WebCrawler {
       }
     }
 
-    public void printUrlStats() {
-      for (String key : urlStats.keySet()) {
-        System.out.println(key + " - " + urlStats.get(key));
-      }
-    }
-
     /**
      * Checks if URL is valid.
-     * @param url the url to check if it is valid
+     * @param url, The url to check if it is valid
      */
     public Boolean isValidUrl(String url) {
       Boolean isValidUrl = true;
@@ -185,15 +208,26 @@ public class WebCrawler {
     public abstract void handleFoundLink(String url);
   }
 
+  /**
+   * WebCrawlJob that implements Runnable; calls the run function
+   */
   public class WebCrawlJob extends HtmlParser implements Runnable {
     private final URL url;
     private final int pathNumber;
 
+    /**
+     * WebCrawlJob Constructor
+     * @param url, Url to queue
+     * @param pathNumber, how far the
+     */
     public WebCrawlJob(URL url, int pathNumber) {
       this.url = url;
       this.pathNumber = pathNumber;
     }
 
+    /**
+     * Run html Parser
+     */
     public void run() {
       retrieveAndParseHtml(url);
       incrementPagesCrawled();
@@ -201,7 +235,7 @@ public class WebCrawler {
 
     /**
      * Checks if URL is valid. If it is, Queue URL
-     * @param url the url to check if it is valid
+     * @param url, the url to check if it is valid
      */
     public void handleFoundLink(String url) {
       if (isValidUrl(url) && shouldKeepCrawling()) {
@@ -215,7 +249,7 @@ public class WebCrawler {
     }
 
     /**
-     * Tests to see if we should keep crawling
+     * Tests to see if the program should keep crawling
      */
     public Boolean shouldKeepCrawling() {
       return (pagesCrawled() < pagesToCrawl()) && (pathNumber < pathsToReach());
