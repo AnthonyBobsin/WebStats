@@ -7,6 +7,9 @@ import java.io.InputStreamReader;
 import java.io.BufferedReader;
 
 import java.util.concurrent.*;
+import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
@@ -26,6 +29,8 @@ public class WebCrawler {
   private static int pagesToCrawl = 0;
   //Amount of paths to reach
   private static int pathsToReach = 0;
+  // List of all web crawl threads spawned
+  public static List<Thread> webCrawlerThreads = Collections.synchronizedList(new ArrayList<Thread>());
 
   /**
    * WebCrawler Constructor
@@ -53,7 +58,7 @@ public class WebCrawler {
    */
   public void printUrlsStats() {
     for (URL key : urlsWithStats.keySet()) {
-      System.out.println("URL: " + key.toString());
+      System.out.println("\nURL: " + key.toString());
       for (Object htmlTag : urlsWithStats.get(key).keySet()) {
         System.out.println(htmlTag.toString() + " - " + urlsWithStats.get(key).get(htmlTag).toString());
         incrementtotalGlobalUrlsWithStats(htmlTag.toString(), (Integer)(urlsWithStats.get(key).get(htmlTag)));
@@ -79,7 +84,7 @@ public class WebCrawler {
    */
   public void printGlobalUrlsWithStats() {
     SortedSet<String> sortGlobalUrlsWithStats = new TreeSet<String>(globalUrlsWithStats.keySet());
-    System.out.println("######### GLOBAL STATS #########");
+    System.out.println("\n######### GLOBAL STATS #########");
     for (String key : sortGlobalUrlsWithStats) {
       int value = globalUrlsWithStats.get(key);
       System.out.println(key + " - " + value);
@@ -92,7 +97,10 @@ public class WebCrawler {
    * @param path, the path number deep this url is
    */
   public void queueWebCrawlTask(URL url, int path) {
-    (new Thread(new WebCrawlJob(url, path))).start();
+    System.out.println("Queuing url: " + url);
+    Thread webCrawlTask = new Thread(new WebCrawlJob(url, path));
+    webCrawlTask.start();
+    webCrawlerThreads.add(webCrawlTask);
   }
 
   /**
@@ -240,7 +248,6 @@ public class WebCrawler {
     public void handleFoundLink(String url) {
       if (isValidUrl(url) && shouldKeepCrawling()) {
         try{
-          System.out.println("Queuing url: " + url);
           queueWebCrawlTask(new URL(url), pathNumber + 1);
         } catch (MalformedURLException e) {
           System.out.println("ERROR Bad URL: " + url);

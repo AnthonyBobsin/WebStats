@@ -19,7 +19,8 @@ public class WebStats {
   }
 
   /**
-   * Run Web Crawler with specific arguments or default arguments
+   * Run Web Crawler with specific arguments or default arguments. Waits for crawling to finish,
+   *  then prints the stats found.
    * @param urlArgument, The url the parse
    * @param pagesArgument, The amount of pages to parse
    * @param pathArgument, The path depth
@@ -36,6 +37,20 @@ public class WebStats {
 
     if (url != null) {
       WebCrawler crawler = new WebCrawler(url, pagesArgument, pathArgument);
+
+      boolean threadIsAlive = true;
+      while (threadIsAlive) {
+        for (Thread webCrawlTask : crawler.webCrawlerThreads) {
+          if (webCrawlTask.isAlive()) {
+            threadIsAlive = true;
+            break;
+          }
+          threadIsAlive = false;
+        }
+      }
+
+      crawler.printUrlsStats();
+      crawler.printGlobalUrlsWithStats();
     }
   }
 
