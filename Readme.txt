@@ -21,8 +21,13 @@ it constantly checks if a new thread should be created. If not, the path and pag
 to keep count of the number of paths. While the new thread is creating, the old thread is constantly checking if the an html tag is contained in an HashMap; if not
 it adds the html tag to the HashMap. If the html tag was previously added; it increments the html tag. Once this thread is finished, it updates the pages crawled.
 
-This keeps on happening constantly until the path and pages limit is reached. It constantly creates new threads as soon as it finds a valid URL to parse.
-And as soon as the the thread is finished crawling the page; it puts the URL and the pages stats into another HashMap. The HashMap structure is as followed:
+This keeps on happening constantly until the path and pages limit is reached.
+Now, to keep track of all the threads created, the following structure was created:
+
+ConcurrentLinkedQueue<Thread> webCrawlerThreads
+
+This structure allows the program to figure out when all the threads are finished. If all the threads are finished; it will print the global variables.
+And as soon as each thread is finished crawling the page; it puts the URL and the pages stats into another HashMap. The HashMap structure is as followed:
 
 HashMap<URL, HashMap<String, Integer>>
 
