@@ -2,6 +2,8 @@ import java.net.URL;
 import java.net.MalformedURLException;
 
 import java.util.Stack;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.*;
 
 public class WebStats {
@@ -47,7 +49,7 @@ public class WebStats {
           }
           threadIsAlive = false;
         }
-      }
+      };
 
       crawler.printUrlsStats();
       crawler.printGlobalUrlsWithStats();

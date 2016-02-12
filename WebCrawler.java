@@ -30,7 +30,8 @@ public class WebCrawler {
   //Amount of paths to reach
   private static int pathsToReach = 0;
   // List of all web crawl threads spawned
-  public static List<Thread> webCrawlerThreads = Collections.synchronizedList(new ArrayList<Thread>());
+  // public static List<Thread> webCrawlerThreads = Collections.synchronizedList(new ArrayList<Thread>());
+  public static ConcurrentLinkedQueue<Thread> webCrawlerThreads = new ConcurrentLinkedQueue<Thread>();
 
   /**
    * WebCrawler Constructor
